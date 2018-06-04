@@ -55,12 +55,6 @@
             </transition>
           </div>
 
-          <!-- <transition name="fade">
-            <div class="alert alert-danger" role="alert" v-if="data.error">
-              The Epic Games username does not exist for this platform. Please try again.
-            </div>
-          </transition> -->
-
         </div>
       </div>
     </div>
