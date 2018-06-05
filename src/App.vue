@@ -5,11 +5,11 @@
         <div class="col-md-8 col-sm-12">
 
           <form class="mb-4" method="get" @submit.prevent="getStats">
-            <div v-for="(player, index) in players" :key="player.username">
+            <div v-for="(player, index) in players" :key="index">
               <div class="form-group row">
                 <label class="col-sm-4 col-form-label" :for="'player' + index">Player {{ index + 1 }}</label>
                 <div class="col-sm-8">
-                  <input class="form-control ml-md" :id="'player' + index" type="text" v-model="player.username" placeholder="e.g. Ninja" value="player1">
+                  <input class="form-control ml-md" :id="'player' + index" :name="'player' + index" type="text" placeholder="e.g. Ninja" v-model="player.username">
                 </div>
               </div>
               <fieldset class="form-group">
@@ -32,15 +32,10 @@
                 </div>
               </fieldset>
             </div>
-            <div v-if="players[0].username && players[1].username">
-              <button type="submit" class="btn btn-primary btn-sm">Compare players</button>
-            </div>
-            <div v-if="addPlayers">
-              <button @click="addPlayer" type="button" class="btn btn-success btn-sm">Add player</button>
-            </div>
-            <div v-if="removePlayers">
-              <button @click="removePlayers" type="button" class="btn btn-danger btn-sm">Remove player</button>
-            </div>
+            <!-- Form Buttons -->
+            <button v-if="comparePlayers" type="submit" class="btn btn-primary btn-sm mr-2">Compare players</button>
+            <button v-if="players.length < 4" @click="addPlayer" type="button" class="btn btn-success btn-sm mr-2">Add player</button>
+            <button v-if="players.length > 2" @click="removePlayer" type="button" class="btn btn-danger btn-sm">Remove player</button>
           </form>
 
           <transition name="fade">
@@ -62,180 +57,144 @@
 </template>
 
 <script>
-import Axios from "axios";
-import Chart from 'chart.js';
+  import Axios from "axios";
+  import Chart from 'chart.js';
 
-export default {
-  name: "app",
-  data() {
-    return {
-      loading: false,
-      addPlayers: true,
-      removePlayers: false,
-      players: [
-        {
-          username: "AdamCCFC",
-          platform: "psn",
-          stats: {}
-        },
-        {
-          username: "Oding_.69",
-          platform: "psn",
-          stats: {}
-        }
-      ],
-      lifeTimeChart: {},
-    };
-  },
-  methods: {
-    getStats() {
-      this.loading = true;
-
-      const headers = {
-        headers: {
-          "TRN-Api-Key": "dfae8ecd-11fc-4691-a8ed-bef6ad8c4364"
-        }
-      };
-
-      Axios.all([
-        Axios.get(`https://cors-anywhere.herokuapp.com/https://api.fortnitetracker.com/v1/profile/${this.players[0].platform}/${this.players[0].username}`, headers),
-        Axios.get(`https://cors-anywhere.herokuapp.com/https://api.fortnitetracker.com/v1/profile/${this.players[1].platform}/${this.players[1].username}`, headers)
-      ])
-      .then(Axios.spread((player1, player2) => {
-        this.loading = false;
-        this.players[0].stats = player1.data;
-        this.players[1].stats = player2.data;
-        this.lifeTimeChart = {
-          type: 'horizontalBar',
-          data: {
-            labels: ['Matches Played', 'Wins', 'Win %', 'Kills', 'K/D'],
-            datasets: [
-              {
-                label: player1.data.epicUserHandle,
-                data: [
-                  player1.data.lifeTimeStats[7].value,
-                  player1.data.lifeTimeStats[8].value,
-                  parseInt(player1.data.lifeTimeStats[9].value.replace('%', ''), 10),
-                  player1.data.lifeTimeStats[10].value,
-                  parseInt(player1.data.lifeTimeStats[11].value, 10),
-                ],
-                backgroundColor: [
-                  'rgba(255,0,0,0.3)', // Red
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)'
-                ],
-                borderColor: [
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                  'rgba(255,0,0,0.3)',
-                ],
-                borderWidth: 3
-              },
-              {
-                label: player2.data.epicUserHandle,
-                data: [
-                  player2.data.lifeTimeStats[7].value,
-                  player2.data.lifeTimeStats[8].value,
-                  parseInt(player2.data.lifeTimeStats[9].value.replace('%', ''), 10),
-                  player2.data.lifeTimeStats[10].value,
-                  parseInt(player2.data.lifeTimeStats[11].value, 10),
-                ],
-                backgroundColor: [
-                  'rgba(0,0,255,0.3)', // Blue
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)'
-                ],
-                borderColor: [
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                  'rgba(0,0,255,0.3)',
-                ],
-                borderWidth: 3
-              },
-            ]
+  export default {
+    name: "app",
+    data() {
+      return {
+        loading: false,
+        players: [
+          {
+            username: "AdamCCFC",
+            platform: "psn",
+            stats: {}
           },
-          options: {
-            responsive: true,
-            lineTension: 1,
-            scales: {
-              yAxes: [{
-                ticks: {
-                  beginAtZero: true,
-                  padding: 25,
-                }
-              }]
-            },
-            title: {
-              display: true,
-              text: 'Lifetime Stats'
-            }
+          {
+            username: "Oding_.69",
+            platform: "psn",
+            stats: {}
+          }
+        ],
+        lifeTimeChart: {
+          type: "",
+          data: {
+            labels: [],
+            datasets: [],
+          },
+          options: {},
+        },
+      };
+    },
+    computed: {
+      comparePlayers() {
+        for (let player of this.players) {
+          if (player.username === "" || player.username === null) {
+            return false;
           }
         }
-
-
-        this.createChart('lifetime-chart', this.lifeTimeChart);
-
-      }),
-        error => {
-          this.error = true;
-          this.loading = false;
-          return error;
-        }
-      );
+        return true;
+      }
     },
-    createChart(chartId, chartData) {
-      const ctx = document.getElementById(chartId);
-      new Chart(ctx, {
-        type: chartData.type,
-        data: chartData.data,
-        options: chartData.options,
-      });
+    methods: {
+      getStats() {
+        this.loading = true;
+
+        const headers = {
+          headers: {
+            "TRN-Api-Key": "dfae8ecd-11fc-4691-a8ed-bef6ad8c4364"
+          }
+        };
+
+        Axios.all(this.players.map(player => Axios.get(`https://cors-anywhere.herokuapp.com/https://api.fortnitetracker.com/v1/profile/${player.platform}/${player.username}`, headers)))
+        .then(
+          (results) => {
+            this.loading = false;
+            // Start formatting the lifetime stats chart
+            this.lifeTimeChart.type = 'horizontalBar';
+            this.lifeTimeChart.data.labels = ['Matches Played', 'Wins', 'Win %', 'Kills', 'K/D'];
+
+            // Map the data from the api request
+            this.lifeTimeChart.data.datasets = results.map(result => {
+              let dataObj = {
+                label: result.data.epicUserHandle,
+                data: [
+                  result.data.lifeTimeStats[7].value,
+                  result.data.lifeTimeStats[8].value,
+                  parseInt(result.data.lifeTimeStats[9].value.replace('%', ''), 10),
+                  result.data.lifeTimeStats[10].value,
+                  parseInt(result.data.lifeTimeStats[11].value, 10),
+                ],
+                borderWidth: 3
+              };
+              return dataObj;
+            });
+
+            // Set the chart options
+            this.lifeTimeChart.options = {
+              responsive: true,
+              lineTension: 1,
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    beginAtZero: true,
+                    padding: 25,
+                  }
+                }]
+              },
+              title: {
+                display: true,
+                text: 'Lifetime Stats'
+              }
+            };
+
+            // Create the chart
+            this.createChart('lifetime-chart', this.lifeTimeChart);
+          },
+          (error) => {
+            this.error = true;
+            this.loading = false;
+            return error;
+          },
+        );
+      },
+      createChart(chartId, chartData) {
+        const ctx = document.getElementById(chartId);
+        new Chart(ctx, {
+          type: chartData.type,
+          data: chartData.data,
+          options: chartData.options,
+        });
+      },
+      addPlayer() {
+        this.players.push({
+          username: "",
+          platform: "pc",
+          stats: {}
+        });
+      },
+      removePlayer() {
+        this.players.splice(-1, 1);
+      }
     },
-    addPlayer() {
-      this.players.push({
-        username: "",
-        platform: "pc",
-        stats: {}
-      });
-    },
-  },
-};
+  };
 </script>
 
 <style>
-#app {
-  font-family: "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+  #app {
+    font-family: "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #2c3e50;
+    margin-top: 60px;
+  }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s;
-}
-.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-  opacity: 0;
-}
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.5s;
+  }
+  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+    opacity: 0;
+  }
 </style>
