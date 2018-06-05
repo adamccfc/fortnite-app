@@ -10,7 +10,10 @@
               <div class="form-group row">
                 <label class="col-sm-4 col-form-label" :for="'player' + index">Player {{ index + 1 }}</label>
                 <div class="col-sm-8">
-                  <input class="form-control ml-md" :id="'player' + index" :name="'player' + index" type="text" placeholder="e.g. Ninja" v-model="player.username">
+                  <input :class="{ 'is-invalid' : player.error }" class="form-control ml-md" :id="'player' + index" :name="'player' + index" type="text" placeholder="e.g. Ninja" v-model="player.username">
+                  <div v-if="player.error" class="invalid-feedback">
+                    This username does not exist for this platform.
+                  </div>
                 </div>
               </div>
               <fieldset class="form-group">
@@ -45,6 +48,12 @@
             </div>
           </transition>
 
+          <transition name="fade">
+            <div class="alert alert-danger" role="alert" v-if="error">
+              An error has occurred.
+            </div>
+          </transition>
+
           <div v-if="lifeTimeChart">
             <transition name="fade">
               <canvas id="lifetime-chart"></canvas>
@@ -66,16 +75,19 @@
     data() {
       return {
         loading: false,
+        error: false,
         players: [
           {
             username: "AdamCCFC",
             platform: "psn",
-            stats: {}
+            stats: {},
+            error: false,
           },
           {
             username: "Oding_.69",
             platform: "psn",
-            stats: {}
+            stats: {},
+            error: false,
           }
         ],
         lifeTimeChart: {
@@ -101,6 +113,7 @@
     methods: {
       getStats() {
         this.loading = true;
+        this.error = false;
 
         const headers = {
           headers: {
@@ -112,46 +125,57 @@
         .then(
           (results) => {
             this.loading = false;
-            // Start formatting the lifetime stats chart
-            this.lifeTimeChart.type = 'horizontalBar';
-            this.lifeTimeChart.data.labels = ['Matches Played', 'Wins', 'Win %', 'Kills', 'K/D'];
 
-            // Map the data from the api request
-            this.lifeTimeChart.data.datasets = results.map(result => {
-              let dataObj = {
-                label: result.data.epicUserHandle,
-                data: [
-                  result.data.lifeTimeStats[7].value,
-                  result.data.lifeTimeStats[8].value,
-                  parseInt(result.data.lifeTimeStats[9].value.replace('%', ''), 10),
-                  result.data.lifeTimeStats[10].value,
-                  parseInt(result.data.lifeTimeStats[11].value, 10),
-                ],
-                borderWidth: 3
-              };
-              return dataObj;
-            });
-
-            // Set the chart options
-            this.lifeTimeChart.options = {
-              responsive: true,
-              lineTension: 1,
-              scales: {
-                yAxes: [{
-                  ticks: {
-                    beginAtZero: true,
-                    padding: 25,
-                  }
-                }]
-              },
-              title: {
-                display: true,
-                text: 'Lifetime Stats'
+            for (let [index, result] of results.entries()) {
+              if (result.data.error) {
+                this.error = true;
+                this.players[index].error = true;
               }
-            };
+            }
 
-            // Create the chart
-            this.createChart('lifetime-chart', this.lifeTimeChart);
+            // Check to see if any of the requests fail
+            if (this.error === false) {
+              // Start formatting the lifetime stats chart
+              this.lifeTimeChart.type = 'horizontalBar';
+              this.lifeTimeChart.data.labels = ['Matches Played', 'Wins', 'Win %', 'Kills', 'K/D'];
+
+              // Map the data from the api request
+              this.lifeTimeChart.data.datasets = results.map(result => {
+                let dataObj = {
+                  label: result.data.epicUserHandle,
+                  data: [
+                    result.data.lifeTimeStats[7].value,
+                    result.data.lifeTimeStats[8].value,
+                    parseInt(result.data.lifeTimeStats[9].value.replace('%', ''), 10),
+                    result.data.lifeTimeStats[10].value,
+                    parseInt(result.data.lifeTimeStats[11].value, 10),
+                  ],
+                  borderWidth: 3
+                };
+                return dataObj;
+              });
+
+              // Set the chart options
+              this.lifeTimeChart.options = {
+                responsive: true,
+                lineTension: 1,
+                scales: {
+                  yAxes: [{
+                    ticks: {
+                      beginAtZero: true,
+                      padding: 25,
+                    }
+                  }]
+                },
+                title: {
+                  display: true,
+                  text: 'Lifetime Stats'
+                }
+              };
+
+              // Create the chart
+              this.createChart('lifetime-chart', this.lifeTimeChart);
+            }
           },
           (error) => {
             this.error = true;
