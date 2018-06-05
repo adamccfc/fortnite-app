@@ -1,3 +1,4 @@
+// TODO: Add error alert when username doesn't exist
 <template>
   <main id="app">
     <div class="container">
